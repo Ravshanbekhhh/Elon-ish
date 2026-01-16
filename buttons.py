@@ -42,7 +42,8 @@ def get_admin_menu():
     builder.button(text="➕ Admin qo'shish")
     builder.button(text="➖ Admin o'chirish")
     builder.button(text="📋 Adminlar ro'yxati")
-    builder.adjust(2, 2, 2)
+    builder.button(text="👤 Foydalanuvchi rejimi")
+    builder.adjust(2, 2, 2, 1)
     return builder.as_markup(resize_keyboard=True)
 
 # ===== KANAL SOZLAMALARI =====
@@ -61,4 +62,5 @@ def get_payment_settings_menu():
     builder.button(text="👤 Karta egasi", callback_data="set_pay_owner")
     builder.button(text="💰 Narx", callback_data="set_pay_price")
     builder.adjust(1)
+
     return builder.as_markup()
