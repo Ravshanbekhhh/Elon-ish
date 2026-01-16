@@ -333,6 +333,16 @@ async def admin_panel_cmd(msg: types.Message):
         await msg.answer("Admin panel:", reply_markup=get_admin_menu())
 
 
+@dp.message(F.text == "👤 Foydalanuvchi rejimi")
+async def back_to_user_mode(msg: types.Message, state: FSMContext):
+    await state.clear()
+    await msg.answer(
+        "Foydalanuvchi rejimiga o'tdingiz. Siz kimsiz?", 
+        reply_markup=get_role_menu()
+    )
+    await state.set_state(UserType.choosing_role)
+
+
 # --- ADMIN QO'SHISH/O'CHIRISH ---
 @dp.message(F.text == "➕ Admin qo'shish")
 async def add_admin_start(msg: types.Message, state: FSMContext):
@@ -637,4 +647,5 @@ async def main():
 
 
 if __name__ == "__main__":
+
     asyncio.run(main())
