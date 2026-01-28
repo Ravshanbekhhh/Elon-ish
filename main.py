@@ -221,7 +221,11 @@ async def fish(msg: types.Message, state: FSMContext):
 @dp.message(Form.yoshi)
 async def yoshi(msg: types.Message, state: FSMContext):
     await state.update_data(yoshi=msg.text)
-    await msg.answer("Kasbiy mahorat:", reply_markup=get_cancel_menu())
+    
+    # --- O'ZGARTIRILGAN QATOR ---
+    await msg.answer("Kasbiy mahorat (nima ish qila olasiz):", reply_markup=get_cancel_menu())
+    # ----------------------------
+    
     await state.set_state(Form.mahorat)
 
 
@@ -694,4 +698,5 @@ async def main():
 if __name__ == "__main__":
 
     asyncio.run(main())
+
 
