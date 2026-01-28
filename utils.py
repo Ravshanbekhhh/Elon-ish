@@ -10,18 +10,21 @@ def gen_temp_id():
 def create_ad_text(data: dict, include_code: bool = False, with_phone: bool = False) -> str:
     role = data.get("role", "Noma’lum")
     
-    # Sarlavha
+    # === ISH BERUVCHI MATNI ===
     if role == "🏢 Ish beruvchiman":
-        text = f"<b>🏢 ISH BOR ({data.get('hudud', 'N/A')})</b>\n\n"
-        text += f"<b>🏢 Idora/Shaxs:</b> {data.get('fish', 'N/A')}\n"
+        text = f"<b>🏢 XODIM KERAK ({data.get('hudud', 'N/A')})</b>\n\n"
+        # Ism so'ralmaydi, shuning uchun bu qatorni olib tashladik yoki umumiy yozdik
+        text += f"<b>🏢 Idora:</b> Ish beruvchi\n" 
         text += f"<b>📍 Hudud:</b> {data.get('hudud', 'N/A')}\n"
         text += f"<b>👷‍♂️ Kim kerak:</b> {data.get('jinsi', 'N/A')}\n"
         text += f"<b>🔞 Yosh chegarasi:</b> {data.get('yoshi', 'N/A')}\n"
         text += f"<b>📓 Talablar:</b> {data.get('mahorat', 'N/A')}\n"
         text += f"<b>⏰ Ish vaqti:</b> {data.get('vaqt', 'N/A')}\n"
+        text += f"<b>ℹ️ Qo'shimcha:</b> {data.get('qosimcha', 'N/A')}\n"
         text += f"<b>💰 Maosh:</b> {data.get('maosh', 'N/A')}\n"
+
+    # === ISHCHI MATNI (O'ZGARMADI) ===
     else:
-        # Ish qidiruvchi uchun (To'liq)
         text = f"<b>👷‍♂️ ISH KERAK ({data.get('hudud', 'N/A')})</b>\n\n"
         text += f"<b>👤 Ism:</b> {data.get('fish', 'N/A')}\n"
         text += f"<b>📍 Hudud:</b> {data.get('hudud', 'N/A')}\n"
@@ -29,7 +32,6 @@ def create_ad_text(data: dict, include_code: bool = False, with_phone: bool = Fa
         text += f"<b>🆔 Yoshi:</b> {data.get('yoshi', 'N/A')}\n"
         text += f"<b>🛠 Mutaxassisligi:</b> {data.get('mahorat', 'N/A')}\n"
         
-        # Faqat kiritilgan bo'lsa chiqaramiz
         if data.get('masuliyat'):
             text += f"<b>📌 Mas’uliyati:</b> {data.get('masuliyat')}\n"
         
