@@ -196,19 +196,57 @@ async def cancel_form(callback: types.CallbackQuery, state: FSMContext):
 
 
 # --- FORM STEPS (Qisqartirilgan) ---
+# --- 1. HUDUDNI QABUL QILIB, JINS TUGMASINI CHIQARISH ---
 @dp.message(Form.hudud)
 async def hudud(msg: types.Message, state: FSMContext):
     await state.update_data(hudud=msg.text)
+    # Endi inline tugma chiqadi
     await msg.answer("Jinsingizni tanlang:", reply_markup=get_gender_menu())
     await state.set_state(Form.jinsi)
 
 
-@dp.message(Form.jinsi, F.text.in_(["🚹 Erkak", "👩 Ayol"]))
-async def jinsi(msg: types.Message, state: FSMContext):
-    gender = "Erkak" if msg.text == "🚹 Erkak" else "Ayol"
+# --- 2. JINSNI QABUL QILISH (YANGI INLINE HANDLER) ---
+# Diqqat: Bu yerda @dp.message emas, @dp.callback_query ishlatiladi
+@dp.callback_query(Form.jinsi, F.data.in_(["gender_male", "gender_female"]))
+async def jinsi(callback: types.CallbackQuery, state: FSMContext):
+    # 1. Tugmalar turgan xabarni O'CHIRIB YUBORAMIZ (ochib ketishi uchun)
+    await callback.message.delete()
+
+    # 2. Tanlovni aniqlaymiz
+    if callback.data == "gender_male":
+        gender = "Erkak"
+    else:
+        gender = "Ayol"
+
     await state.update_data(jinsi=gender)
-    await msg.answer("Ism sharifingizni kiriting:", reply_markup=get_cancel_menu())
+
+    # 3. Keyingi savolga o'tamiz
+    await callback.message.answer("Ism sharifingizni kiriting:", reply_markup=get_cancel_menu())
     await state.set_state(Form.fish)
+    
+    # Botga "bosildi" degan signal beramiz (xatolik chiqmasligi uchun)
+    await callback.answer()
+
+
+@dp.callback_query(Form.jinsi, F.data.in_(["gender_male", "gender_female"]))
+async def jinsi(callback: types.CallbackQuery, state: FSMContext):
+    # 1. Tugmalar turgan xabarni O'CHIRIB YUBORAMIZ (ochib ketishi uchun)
+    await callback.message.delete()
+
+    # 2. Tanlovni aniqlaymiz
+    if callback.data == "gender_male":
+        gender = "Erkak"
+    else:
+        gender = "Ayol"
+
+    await state.update_data(jinsi=gender)
+
+    # 3. Keyingi savolga o'tamiz
+    await callback.message.answer("Ism sharifingizni kiriting:", reply_markup=get_cancel_menu())
+    await state.set_state(Form.fish)
+    
+    # Botga "bosildi" degan signal beramiz (xatolik chiqmasligi uchun)
+    await callback.answer()
 
 
 @dp.message(Form.fish)
@@ -698,5 +736,6 @@ async def main():
 if __name__ == "__main__":
 
     asyncio.run(main())
+
 
 
