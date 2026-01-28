@@ -26,12 +26,15 @@ def get_skip_video_menu():
     builder.adjust(1)
     return builder.as_markup(resize_keyboard=True)
 
+# buttons.py ichida shu funksiyani almashtiring:
+
 def get_gender_menu():
-    builder = ReplyKeyboardBuilder()
-    builder.button(text="🚹 Erkak")
-    builder.button(text="👩 Ayol")
+    builder = InlineKeyboardBuilder()
+    # callback_data - bu botga yuboriladigan yashirin kod
+    builder.button(text="🚹 Erkak", callback_data="gender_male")
+    builder.button(text="👩 Ayol", callback_data="gender_female")
     builder.adjust(2)
-    return builder.as_markup(resize_keyboard=True)
+    return builder.as_markup()
 
 # ===== ADMIN MENYU (YANGILANDI) =====
 def get_admin_menu():
@@ -64,3 +67,4 @@ def get_payment_settings_menu():
     builder.adjust(1)
 
     return builder.as_markup()
+
