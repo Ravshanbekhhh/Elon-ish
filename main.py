@@ -340,6 +340,10 @@ async def tel(msg: types.Message, state: FSMContext):
         await state.set_state(Form.video)
 
 # --- TO'LOV QISMI (DINAMIK) ---
+# To'lov funksiyasi (Universal bo'lishi kerak)
+# Agar handler @dp.message(Form.video ...) deb yozilgan bo'lsa ham, 
+# biz uni boshqa joydan chaqirsak ishlayveradi.
+
 @dp.message(Form.video, F.video | (F.text == "➡️ Videoni o'tkazib yuborish"))
 async def request_payment(msg: types.Message, state: FSMContext):
     if msg.video: await state.update_data(video_id=msg.video.file_id)
@@ -759,6 +763,7 @@ async def main():
 if __name__ == "__main__":
 
     asyncio.run(main())
+
 
 
 
