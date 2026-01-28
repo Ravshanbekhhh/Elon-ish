@@ -115,10 +115,10 @@ class Form(StatesGroup):
     fish = State()
     yoshi = State()
     mahorat = State()
-    masuliyat = State()
+    masuliyat = State() # Ishchi uchun kerak
     vaqt = State()
-    bosh_vaqt = State()
-    qosimcha = State()
+    bosh_vaqt = State() # Ishchi uchun kerak
+    qosimcha = State()  # Ishchi uchun kerak
     maosh = State()
     tel = State()
     video = State()
@@ -205,75 +205,70 @@ async def hudud(msg: types.Message, state: FSMContext):
     await state.set_state(Form.jinsi)
 
 
-# --- 2. JINSNI QABUL QILISH (YANGI INLINE HANDLER) ---
-# Diqqat: Bu yerda @dp.message emas, @dp.callback_query ishlatiladi
+# --- 1. JINSINI TANLASH ---
 @dp.callback_query(Form.jinsi, F.data.in_(["gender_male", "gender_female"]))
 async def jinsi(callback: types.CallbackQuery, state: FSMContext):
-    # 1. Tugmalar turgan xabarni O'CHIRIB YUBORAMIZ (ochib ketishi uchun)
     await callback.message.delete()
-
-    # 2. Tanlovni aniqlaymiz
-    if callback.data == "gender_male":
-        gender = "Erkak"
-    else:
-        gender = "Ayol"
-
+    gender = "Erkak" if callback.data == "gender_male" else "Ayol"
     await state.update_data(jinsi=gender)
-
-    # 3. Keyingi savolga o'tamiz
-    await callback.message.answer("Ism sharifingizni kiriting:", reply_markup=get_cancel_menu())
-    await state.set_state(Form.fish)
     
-    # Botga "bosildi" degan signal beramiz (xatolik chiqmasligi uchun)
+    # Rolni tekshiramiz savolni o'zgartirish uchun
+    data = await state.get_data()
+    if data.get("role") == "🏢 Ish beruvchiman":
+        await callback.message.answer("Idora nomi yoki Ismingizni kiriting:", reply_markup=get_cancel_menu())
+    else:
+        await callback.message.answer("Ism sharifingizni kiriting:", reply_markup=get_cancel_menu())
+        
+    await state.set_state(Form.fish)
     await callback.answer()
 
 
-@dp.callback_query(Form.jinsi, F.data.in_(["gender_male", "gender_female"]))
-async def jinsi(callback: types.CallbackQuery, state: FSMContext):
-    # 1. Tugmalar turgan xabarni O'CHIRIB YUBORAMIZ (ochib ketishi uchun)
-    await callback.message.delete()
-
-    # 2. Tanlovni aniqlaymiz
-    if callback.data == "gender_male":
-        gender = "Erkak"
-    else:
-        gender = "Ayol"
-
-    await state.update_data(jinsi=gender)
-
-    # 3. Keyingi savolga o'tamiz
-    await callback.message.answer("Ism sharifingizni kiriting:", reply_markup=get_cancel_menu())
-    await state.set_state(Form.fish)
-    
-    # Botga "bosildi" degan signal beramiz (xatolik chiqmasligi uchun)
-    await callback.answer()
-
-
+# --- 2. FISH (ISM) ---
 @dp.message(Form.fish)
 async def fish(msg: types.Message, state: FSMContext):
     await state.update_data(fish=msg.text)
-    await msg.answer("Yoshi:", reply_markup=get_cancel_menu())
+    
+    data = await state.get_data()
+    if data.get("role") == "🏢 Ish beruvchiman":
+        await msg.answer("Yosh chegarasini kiriting:\n(Masalan: 20-30 yosh)", reply_markup=get_cancel_menu())
+    else:
+        await msg.answer("Yoshingiz:", reply_markup=get_cancel_menu())
+        
     await state.set_state(Form.yoshi)
 
 
+# --- 3. YOSHI ---
 @dp.message(Form.yoshi)
 async def yoshi(msg: types.Message, state: FSMContext):
     await state.update_data(yoshi=msg.text)
     
-    # --- O'ZGARTIRILGAN QATOR ---
-    await msg.answer("Kasbiy mahorat (nima ish qila olasiz):", reply_markup=get_cancel_menu())
-    # ----------------------------
-    
+    data = await state.get_data()
+    if data.get("role") == "🏢 Ish beruvchiman":
+        await msg.answer("Ish haqida ma'lumot va Talablar:", reply_markup=get_cancel_menu())
+    else:
+        await msg.answer("Kasbiy mahoratingiz (nima ish qila olasiz):", reply_markup=get_cancel_menu())
+        
     await state.set_state(Form.mahorat)
 
 
+# --- 4. MAHORAT (YO'L SHU YERDA IKKIGA AJRALADI) ---
 @dp.message(Form.mahorat)
 async def mahorat(msg: types.Message, state: FSMContext):
     await state.update_data(mahorat=msg.text)
-    await msg.answer("Mas’uliyat:", reply_markup=get_cancel_menu())
-    await state.set_state(Form.masuliyat)
+    
+    data = await state.get_data()
+    
+    # AGAR ISH BERUVCHI BO'LSA -> Mas'uliyatni tashlab o'tib ketamiz
+    if data.get("role") == "🏢 Ish beruvchiman":
+        await msg.answer("Ish vaqtini kiriting:", reply_markup=get_cancel_menu())
+        await state.set_state(Form.vaqt) # To'g'ridan-to'g'ri VAQT ga o'tish
+    else:
+        # AGAR ISHCHI BO'LSA -> Mas'uliyatni so'raymiz
+        await msg.answer("Mas'uliyatingiz (qaysi ishlarga javob bera olasiz):", reply_markup=get_cancel_menu())
+        await state.set_state(Form.masuliyat)
 
 
+# --- 5. MAS'ULIYAT (Faqat Ishchi uchun) ---
 @dp.message(Form.masuliyat)
 async def masuliyat(msg: types.Message, state: FSMContext):
     await state.update_data(masuliyat=msg.text)
@@ -281,31 +276,44 @@ async def masuliyat(msg: types.Message, state: FSMContext):
     await state.set_state(Form.vaqt)
 
 
+# --- 6. VAQT (YO'L YANA AJRALADI) ---
 @dp.message(Form.vaqt)
 async def vaqt(msg: types.Message, state: FSMContext):
     await state.update_data(vaqt=msg.text)
-    await msg.answer("Bo‘sh vaqt:", reply_markup=get_cancel_menu())
-    await state.set_state(Form.bosh_vaqt)
+    
+    data = await state.get_data()
+    
+    # AGAR ISH BERUVCHI BO'LSA -> Bo'sh vaqt va Qo'shimchani tashlab, MAOSH ga o'tamiz
+    if data.get("role") == "🏢 Ish beruvchiman":
+        await msg.answer("Qancha maosh bermoqchisiz?", reply_markup=get_cancel_menu())
+        await state.set_state(Form.maosh)
+    else:
+        # AGAR ISHCHI BO'LSA -> Bo'sh vaqtni so'raymiz
+        await msg.answer("Bo'sh vaqtingiz bormi? (bo'lsa yozing):", reply_markup=get_cancel_menu())
+        await state.set_state(Form.bosh_vaqt)
 
 
+# --- 7. BO'SH VAQT (Faqat Ishchi uchun) ---
 @dp.message(Form.bosh_vaqt)
 async def bosh_vaqt(msg: types.Message, state: FSMContext):
     await state.update_data(bosh_vaqt=msg.text)
-    await msg.answer("Qo‘shimcha:", reply_markup=get_cancel_menu())
+    await msg.answer("Qo'shimcha ma'lumotlar (ixtiyoriy):", reply_markup=get_cancel_menu())
     await state.set_state(Form.qosimcha)
 
 
+# --- 8. QO'SHIMCHA (Faqat Ishchi uchun) ---
 @dp.message(Form.qosimcha)
 async def qosimcha(msg: types.Message, state: FSMContext):
     await state.update_data(qosimcha=msg.text)
-    await msg.answer("Maosh:", reply_markup=get_cancel_menu())
+    await msg.answer("Qancha maosh kutmoqdasiz?", reply_markup=get_cancel_menu())
     await state.set_state(Form.maosh)
 
 
+# --- 9. MAOSH VA DAVOMI (Ikkalasi uchun bir xil) ---
 @dp.message(Form.maosh)
 async def maosh(msg: types.Message, state: FSMContext):
     await state.update_data(maosh=msg.text)
-    await msg.answer("Telefon raqam:", reply_markup=get_cancel_menu())
+    await msg.answer("Telefon raqamingiz:", reply_markup=get_cancel_menu())
     await state.set_state(Form.tel)
 
 
@@ -736,6 +744,7 @@ async def main():
 if __name__ == "__main__":
 
     asyncio.run(main())
+
 
 
 
