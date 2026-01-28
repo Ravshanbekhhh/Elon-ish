@@ -585,7 +585,7 @@ async def approve(callback: types.CallbackQuery):
     code = gen_code()
     data["code"] = code
 
-    # Matn
+    # --- MATN TAYYORLASH ---
     if admin_text:
         final_text_public = admin_text
         final_text_hidden = admin_text
@@ -596,37 +596,82 @@ async def approve(callback: types.CallbackQuery):
         final_text_public = create_ad_text(data, include_code=True, with_phone=False)
         final_text_hidden = create_ad_text(data, include_code=True, with_phone=True)
 
-    # Kanallar
+    # --- KANALLARNI ANIQLASH ---
     channels = bot_config["channels"]
-    target_channel = channels.get("erkak") if data["jinsi"] == "Erkak" else channels.get("ayol")
-    hidden_channel = channels.get("yashirin")
+    if data["jinsi"] == "Erkak":
+        target_channel_id = channels.get("erkak")
+    else:
+        target_channel_id = channels.get("ayol")
+    
+    hidden_channel_id = channels.get("yashirin")
 
-    # Rasm
+    # --- RASM ---
     photo_to_send = admin_photo if admin_photo else get_ad_photo(data.get("role"), data.get("jinsi"))
 
     try:
-        if target_channel:
+        # 1. OMMAVIY KANALGA JOYLASh
+        if target_channel_id:
             if photo_to_send:
-                await bot.send_photo(target_channel, photo=photo_to_send, caption=final_text_public)
+                await bot.send_photo(target_channel_id, photo=photo_to_send, caption=final_text_public)
             else:
-                await bot.send_message(target_channel, final_text_public)
-
-        if hidden_channel:
+                await bot.send_message(target_channel_id, final_text_public)
+        
+        # 2. YASHIRIN KANALGA JOYLASh
+        if hidden_channel_id:
             if admin_photo:
-                await bot.send_photo(hidden_channel, photo=admin_photo, caption=f"🔐 #ARXIV\n\n{final_text_hidden}")
+                await bot.send_photo(hidden_channel_id, photo=admin_photo, caption=f"🔐 #ARXIV\n\n{final_text_hidden}")
             else:
-                await bot.send_message(hidden_channel, f"🔐 #ARXIV\n\n{final_text_hidden}")
+                await bot.send_message(hidden_channel_id, f"🔐 #ARXIV\n\n{final_text_hidden}")
 
-        await bot.send_message(user_id, f"✅ Tasdiqlandi! Kod: <b>{code}</b>")
-
-        # DB GA SAQLASH
+        # 3. DB GA SAQLASH
         await db.save_ad(code, data)
+
+        # ---------------------------------------------------------
+        # 4. USERGA XABAR + KANAL LINKI (YANGILANGAN QISM)
+        # ---------------------------------------------------------
+        channel_link = None
+        
+        # Kanal linkini olishga harakat qilamiz
+        if target_channel_id:
+            try:
+                chat_info = await bot.get_chat(target_channel_id)
+                if chat_info.username:
+                    channel_link = f"https://t.me/{chat_info.username}"
+                elif chat_info.invite_link:
+                    channel_link = chat_info.invite_link
+                else:
+                    # Agar link yo'q bo'lsa, uni hosil qilamiz (Private kanallar uchun)
+                    channel_link = await bot.export_chat_invite_link(target_channel_id)
+            except Exception as e:
+                logging.warning(f"Kanal linkini olib bo'lmadi: {e}")
+
+        # Userga boradigan xabar matni
+        user_msg = (
+            f"✅ <b>Tabriklaymiz! E'loningiz tasdiqlandi.</b>\n"
+            f"🔎 E'lon kodi: <b>{code}</b>\n\n"
+        )
+
+        kb = None
+        if channel_link:
+            user_msg += (
+                f"📢 E'loningiz kanalimizga joylandi.\n"
+                f"Pastdagi tugma orqali kirib ko'rishingiz va obuna bo'lishingiz mumkin."
+            )
+            # Link tugmasini yasaymiz
+            kb_builder = InlineKeyboardBuilder()
+            kb_builder.button(text="↗️ E'lonni ko'rish va Obuna bo'lish", url=channel_link)
+            kb = kb_builder.as_markup()
+        
+        await bot.send_message(user_id, user_msg, reply_markup=kb)
+        
+        # Admin xabarini yangilash
         await callback.message.edit_caption(caption=f"✅ <b>JOYLANDI</b>\nKod: {code}")
 
     except Exception as e:
         await callback.message.answer(f"Xatolik: {e}")
+        logging.error(e)
+    
     await callback.answer()
-
 
 @dp.callback_query(F.data.startswith("reject_"))
 async def reject(callback: types.CallbackQuery):
@@ -649,3 +694,4 @@ async def main():
 if __name__ == "__main__":
 
     asyncio.run(main())
+
